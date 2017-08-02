@@ -73,7 +73,7 @@ The code in this macro was derived from the macro supplied in the Supplementary 
 
 ```
 Quantitative Imaging of Membrane Lipid Order in Cells and Organisms
-Owen DM, Rentero C, Magenau A, Abu-Siniyeh A, and Katharina Gaus K.
+Owen DM, Rentero C, Magenau A, Abu-Siniyeh A, and Gaus K.
 Nature Protocols 2011 Dec 8;7(1):24-35.
 ```
 - [DOI: 10.1038/nprot.2011.419](https://doi.org/10.1038/nprot.2011.419)
