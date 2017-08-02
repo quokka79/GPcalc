@@ -51,7 +51,7 @@ Dialog.addMessage("------------------------------------------- Mask Thresholds -
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
 Dialog.addNumber("Normal method: GP-mask threshold from", 15);
 Dialog.addNumber("Normal method: IF-mask threshold from: ", 10);
-Dialog.addChoice("Tweak thresholds manually?",YNquestion, "Yes");
+Dialog.addChoice("Normal method: Tweak thresholds manually?",YNquestion, "Yes");
 
 Dialog.addMessage("--------------------------------------------- HSB Images ---------------------------------------------");
 Dialog.addChoice("Do you want to generate HSB images?",YNquestion, "Yes");
@@ -98,9 +98,19 @@ if (numberOfImages == 0) {exit("There are no files with extension \"" + InputFil
 
 // Check IF channel exists if we plan to use it
 if (ch_IF == 0) {
- if (HSBrightChannel == "Immunofluoresence channel") {
-	exit("You have not specified an immunofluoresence channel!");
- }
+	if (HSBrightChannel == "Immunofluoresence channel") {
+		
+		Dialog.create("GP analysis parameters");
+		Dialog.addNumber("Immunofluorescence channel (0 = None):", 3);
+		Dialog.addMessage("Whoops! You want to use the IF channel but haven't specified where it is...");
+		Dialog.addMessage("\n");
+		Dialog.show();
+		ch_IF = Dialog.getNumber();
+
+		if (ch_IF == 0) {
+			exit("You still have not specified an immunofluoresence channel!");
+		}
+	}
 }
 
 // initialise the timer for the log
@@ -187,7 +197,9 @@ for (k = 0; k < 256; k++) {
 	GPcorrected[k] = -(1 + GPuncorrected[k] + (GFHistograms * GPuncorrected[k]) - GFHistograms) / (-1 - GPuncorrected[k] + (GFHistograms * GPuncorrected[k]) - GFHistograms);
 }
 
-// process each image
+
+// -=-=-=-=-=-=-=-=-=- Begin processing images in turn -=-=-=-=-=-=-=-=-=-
+
 for (i = 0; i < numberOfImages; i++) {
  if (endsWith(listDir[i], InputFileExt)) {
 
@@ -279,10 +291,10 @@ for (i = 0; i < numberOfImages; i++) {
 				setThreshold(GPmaskThreshold, currGPMax);
 				run("Threshold...");
 				waitForUser("Adjust GP threshold and press OK");
-				run("Close");
+				if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				run("Threshold...");
 				getThreshold(GPmaskThreshold,currGPMax);
-				run("Close");
+				if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 		 		setBatchMode("hide");
 			}
 		} else {
@@ -329,10 +341,10 @@ for (i = 0; i < numberOfImages; i++) {
 					setThreshold(IFmaskThreshold, currIFMax);
 	 	 			run("Threshold...");
 	 	 			waitForUser("Adjust IF Channel threshold and press OK");
-	 	 			run("Close");
+	 	 			if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 					run("Threshold...");
 					getThreshold(IFmaskThreshold,currIFMax);
-					run("Close");
+					if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 			 		setBatchMode("hide");
 				}
 			} else {
@@ -344,27 +356,28 @@ for (i = 0; i < numberOfImages; i++) {
 			setAutoThreshold("Otsu dark");
 		}
 
-		 run("Options...", "black");
-		 run("Convert to Mask");
-		 run("Divide...","value=255");
-		 setMinAndMax(0.0,1.0);
+		selectWindow(IFmaskName);
+		run("Options...", "black");
+		run("Convert to Mask");
+		run("Divide...","value=255");
+		setMinAndMax(0.0,1.0);
 
-		 GPIFName = imgName + " - GPIF";
-		 imageCalculator("Multiply create", GPname, IFmaskName);
-		 rename(GPIFName);
-		 selectWindow(GPIFName);
-		 run(GPLUTname);
-		 saveAs("tiff", GP_IF_images_Dir + imgName + "_GP-IF");
-		 rename(GPIFName);
-		 HistoFileName=histogramIF_Dir + imgName + "_GP-IF_Histogram.tsv";
-		 HistogramGeneration(GPIFName, HistoFileName);
+		GPIFName = imgName + " - GPIF";
+		imageCalculator("Multiply create", GPname, IFmaskName);
+		rename(GPIFName);
+		selectWindow(GPIFName);
+		run(GPLUTname);
+		saveAs("tiff", GP_IF_images_Dir + imgName + "_GP-IF");
+		rename(GPIFName);
+		HistoFileName=histogramIF_Dir + imgName + "_GP-IF_Histogram.tsv";
+		HistogramGeneration(GPIFName, HistoFileName);
 
-		 selectWindow(IFmaskName);
-		 close();
+		selectWindow(IFmaskName);
+		close();
 	}
 
 	if (MakeHSBimages=="Yes") {
-		 	HSBgeneration();
+			HSBgeneration();
 	}
 
 	closeAllImages();
