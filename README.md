@@ -67,7 +67,7 @@ The raw GP image will look very messy (noisy) as even the 'background' pixels wi
 Choose from either Otsu or Normal. If you choose Normal you'll need to supply appropriate threshold values in the following boxes. Otsu is an automatic method so none of the following threshold values will be used if this method is chosen.
 
 **GP-mask threshold from** _(a number, Default: 15)_  
-A mask of the 32-bit GP image will be made at this threshold and a 'GP-masked GP' image created containing the pixels with values above the threshold.
+A mask of the 32-bit summed-intensity image (the sum of ordered and disordered channels) will be made at this threshold and a 'GP-masked GP' image created containing GP values only for areas above the threshold.
 
 **IF-mask threshold from** _(a number, Default: 15)_  
 A mask of the IF image will be made at this threshold and an 'IF-masked GP' image created. This value needs to make sense with your IF image bit depth if you have opted to 'Use native bit-depth' above.
