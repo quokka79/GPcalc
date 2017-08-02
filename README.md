@@ -6,20 +6,19 @@ The original macro supplied with the publication (see below) doesn't work as-is.
 ## Software Requirements
 - [Fiji](https://fiji.sc/) (which includes BioFormats)
 or
-- [ImageJ](https://imagej.nih.gov/ij/)
-- [BioFormats](http://downloads.openmicroscopy.org/bio-formats/)
+- [ImageJ](https://imagej.nih.gov/ij/) and also [BioFormats](http://downloads.openmicroscopy.org/bio-formats/)
 
 ## Input Image Requirements
-This is detailed in the original paper (see below) but you just need at least one two-channel image where each channel is one of the reporter channels for your favourite environmentally sensitive membrane dye, e.g. ordered and disordered. An optional third channel can contain immunofluoresence of some other interesting target should you wish to check GP vs InterestingTarget.
+Details on image acquisition requirements are in the original paper (see below) but for this macro you need at least one two-channel image where each channel is one of the reporter channels for your favourite environmentally sensitive membrane dye, e.g. ordered and disordered. An optional third channel can contain immunofluoresence of some other interesting target should you wish to check GP vs InterestingTarget.
 
-If you acquire multiple images it is important to keep your acquisition settings constant, e.g. consistent channel order, laser power, image area ('zoom'), gain, offset, scan times etc, etc. The macro will process all images (of the file-type specified in set-up) that it finds within the input folder (which is also specified during set-up).
+If you acquire multiple images it is important to keep your acquisition settings constant, e.g. consistent channel order, laser power, image area ('zoom'), gain, offset, scan times etc, etc. The macro will process all images (of the format specified in set-up) that it finds within the input folder (which is also specified during set-up).
 
-Unlike the original macro there's no need to split everything into separate TIFF images with special names -- the original proprietary format is fine, so long as it can be read by BioFormats (which is almost everything) then it's fine. TIFF stacks are fine too. Just so long as one file contains the two or three channels for that image.
+Unlike the original macro there's no need to split all your images out into separate TIFF images with special names -- the original proprietary format and naming is fine. As long as it can be read by BioFormats (which is almost everything) then it's fine, e.g. TIFF stacks are fine too. Just so long as one image file contains the two or three channels for that image.
 
-Files don't have to be named anything in particular for this macro to work.
+Files don't have to be named anything in particular for this macro to work but you do need to know which channels contain which type of data and this order should be the same for all images.
 
 ## Installation
-As with any ImageJ macro, it's just a text file. Download it an save it somewhere convenient. You can also drag it from your file explorer into the status bar of any running ImageJ instance and it will open it in the macro editor. Or you can click Plugins --> Macros --> Install... and have it available in the Macros menu. 
+As with any ImageJ macro, it's just a text file. Download it an save it somewhere convenient. You can also drag it from your file explorer into the status bar of any running ImageJ instance and it will open it in the macro editor. Or you can click Plugins --> Macros --> Install... and have it available in the Macros menu for that session.
 
 ## Running it
 Once installed or open in the editor, run the macro (click it in the Plugins --> Macros menu or click the Run button in Fiji's text editor or Macros --> Run Macro in ImageJ's text editor) to begin using it.
@@ -82,7 +81,7 @@ HSB images is a faux-coloured GP-intensity image. The raw GP image is colourised
 Select Yes to make such an image.
 
 **HSB Brightness from** _(list selection, Default: Ordered channel)_  
-Intensity values will be used from this raw data channel.
+Intensity values will be used from this raw data channel. You can also select the sum-of-ordered-and-disordered data (to avoid dimming pixels from the opposite order!) or select to make two HSB images, one from the sum and another from the IF channel. If you select an option requiring the IF channel but haven't given an IF channel above (i.e. you gave a '0') then you will be prompted to fix this in a subsequent window.
 
 **Lookup Table for HSB Images** _(list selection)_  
 GP values will be colourised according to this LUT.
