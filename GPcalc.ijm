@@ -19,7 +19,7 @@ LUTlist1 = newArray("Grays","Fire","candyBright DavLUT","Rainbow RGB");
 YNquestion = newArray("Yes","No");
 GFapplication = newArray("Image data (pre GP calc)","Histogram data (post GP calc)");
 InputFileExt = ".nd2";
-HSBrightChannelOptions = newArray("Ordered channel","Disordered channel","Immunofluoresence channel");
+HSBrightChannelOptions = newArray("Ordered channel","Disordered channel","Immunofluoresence channel", "Sum of Ordered + Disordered", "Sum O+D and also IF channel");
 ThreshList = newArray("Normal","Otsu");
 
 // get all the available LUTs
@@ -98,11 +98,11 @@ if (numberOfImages == 0) {exit("There are no files with extension \"" + InputFil
 
 // Check IF channel exists if we plan to use it
 if (ch_IF == 0) {
-	if (HSBrightChannel == "Immunofluoresence channel") {
+	if (HSBrightChannel == "Immunofluoresence channel" || HSBrightChannel == "Sum O+D and also IF channel") {
 		
 		Dialog.create("GP analysis parameters");
+		Dialog.addMessage("Whoops! You want to use the IF channel but haven't specified a channel number for it.");
 		Dialog.addNumber("Immunofluorescence channel (0 = None):", 3);
-		Dialog.addMessage("Whoops! You want to use the IF channel but haven't specified where it is...");
 		Dialog.addMessage("\n");
 		Dialog.show();
 		ch_IF = Dialog.getNumber();
@@ -281,7 +281,10 @@ for (i = 0; i < numberOfImages; i++) {
 
 	// create masked GP by thresholding
 	selectWindow(sumName);
-
+	run("Duplicate..."," ");
+	SumMaskName = "SumMask";
+	rename(SumMaskName);
+		 
 	if (ThresholdType == "Normal") {
 		if (TweakThreshold == "Yes"){
 			if (i == 0) { // first image in the list
@@ -309,8 +312,8 @@ for (i = 0; i < numberOfImages; i++) {
 	
 	run("Convert to Mask");
 	run("Subtract...", "value=254");
-	rename("SumMask");
-	imageCalculator("Multiply create", "SumMask", rawGPname);
+	rename(SumMaskName);
+	imageCalculator("Multiply create", SumMaskName, rawGPname);
 	run(GPLUTname);
 	GPname = imgName + " - GP";
 	saveAs("tiff", GP_images_Dir + imgName + "_maskedGP");
@@ -377,7 +380,21 @@ for (i = 0; i < numberOfImages; i++) {
 	}
 
 	if (MakeHSBimages=="Yes") {
-			HSBgeneration();
+
+		// Select and copy the channel to be used for 'brightness' (the raw ord/dis/IF image)
+		if (HSBrightChannel=="Ordered channel") {
+			HSBgeneration(ordWindowTitle, "ordered");
+		} else if (HSBrightChannel=="Disordered channel") {
+			HSBgeneration(disWindowTitle, "disordered");
+		} else if (HSBrightChannel=="Immunofluoresence channel") {
+			HSBgeneration(imfWindowTitle, "immunofl");
+		} else if (HSBrightChannel=="Sum of Ordered + Disordered") {
+			HSBgeneration(sumName, "sum ord+dis");
+		} else if (HSBrightChannel=="Sum O+D and also IF channel") {
+			HSBgeneration(sumName, "sum ord+dis");
+			HSBgeneration(imfWindowTitle, "immunofl");
+		}
+
 	}
 
 	closeAllImages();
@@ -449,20 +466,13 @@ function HistogramGeneration (WindowName, HistoFileName) {
 }
 
 
-function HSBgeneration() {
+function HSBgeneration(HSBIntensityChannel, OutfileSuffix) {
 
-	// Select and copy the channel to be used for 'brightness' (the raw ord/dis/IF image)
-	if (HSBrightChannel=="Ordered channel") {
-		selectWindow(ordWindowTitle);
-	} else if (HSBrightChannel=="Disordered channel") {
-		selectWindow(disWindowTitle);
-	} else {
-		selectWindow(imfWindowTitle);
-	}
+	selectWindow(HSBIntensityChannel);
 	BrightChannel = "BrightnessChannel";
 	run("Duplicate..."," ");
 	rename(BrightChannel);
-	run("Enhance Contrast", "saturated=0.5 normalize");
+	run("Enhance Contrast", "saturated=0.35 normalize");
 
 	//run("Set Measurements...", "min limit display redirect=None decimal=5"); // ? not sure what this does here
 
@@ -513,7 +523,7 @@ function HSBgeneration() {
 	selectWindow("RGB");
 	HSBname = imgName + " HSB";
 	rename(HSBname);
-	saveAs("tiff", HSB_Dir + imgName + "_HSB by " + HSBrightChannel);
+	saveAs("tiff", HSB_Dir + imgName + "_HSB by " + OutfileSuffix);
 
 	selectWindow(HueChannel + " (red)");
 	close();
