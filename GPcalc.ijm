@@ -17,6 +17,7 @@ dir = getDirectory("Choose a Directory ");
 // Init some vars
 LUTlist1 = newArray("Grays","Fire","candyBright DavLUT","Rainbow RGB");
 YNquestion = newArray("Yes","No");
+GFapplication = newArray("Image data (pre GP calc)","Histogram data (post GP calc)");
 InputFileExt = ".nd2";
 HSBrightChannelOptions = newArray("Ordered channel","Disordered channel","Immunofluoresence channel");
 ThreshList = newArray("Normal","Otsu");
@@ -47,6 +48,7 @@ Dialog.addChoice("IF Channel Threshold by: ", ThreshList, "Normal");
 Dialog.addNumber("Normal Threshold pixels over: ", 10);
 Dialog.addMessage("\n");
 Dialog.addNumber("G factor (1 if unknown):  ", 1);
+Dialog.addChoice("Apply G factor to image data or histograms?",GFapplication, "Histogram data (post GP calc)");
 Dialog.addMessage("\n");
 Dialog.addChoice("Do you want to generate HSB images?",YNquestion, "Yes");
 Dialog.addChoice("HSB Brightness from: ", HSBrightChannelOptions, "Ordered channel");
@@ -67,7 +69,8 @@ lut1 = Dialog.getChoice();
 ch_IF = Dialog.getNumber();
 ThresholdType = Dialog.getChoice();
 tc = Dialog.getNumber();
-GFactorSupplied = Dialog.getNumber();
+GFactor = Dialog.getNumber();
+GFactorAppliedTo = Dialog.getChoice();
 MakeHSBimages = Dialog.getChoice();
 HSBrightChannel = Dialog.getChoice();
 ApplySameBrightness =  Dialog.getChoice();
@@ -151,7 +154,7 @@ if (ch_IF != 0) {
    File.makeDirectory(histogramIF_Dir);
 }
 
-// Set up GP and GPcorrected Arrays
+// Set up GP and GPcorrected Arrays for histogram calculations
 
 GPuncorrected = newArray(256);
 for (j = 0; j < 256; j++) {
@@ -159,8 +162,15 @@ for (j = 0; j < 256; j++) {
 }
 
 GPcorrected = newArray(256);
+if (GFactorAppliedTo == "Image data (pre GP calc)") {
+      GFHistograms = 1; // GFactor will be applied to the image data, the histograms are not modified.
+} else {
+      //"Histogram data (post GP calc)"
+      GFHistograms = GFactor; // the histograms are corrected, the image data will not be modified.
+}
+
 for (k = 0; k < 256; k++) {
-    GPcorrected[k] = -(1 + GPuncorrected[k] + GFactorSupplied * GPuncorrected[k] - GFactorSupplied) / (-1 - GPuncorrected[k] + GFactorSupplied * GPuncorrected[k] - GFactorSupplied);
+      GPcorrected[k] = -(1 + GPuncorrected[k] + (GFHistograms * GPuncorrected[k]) - GFHistograms) / (-1 - GPuncorrected[k] + (GFHistograms * GPuncorrected[k]) - GFHistograms);
 }
 
 // process each image
@@ -194,15 +204,20 @@ for (i = 0; i < numberOfImages; i++) {
       //select disordered, apply GFactor correction
       selectWindow(disWindowTitle);
       run("Grays");
+
       if (UseNativeBitDepth == "No") {
             run("8-bit");
             run("32-bit");
       }
-
-      run("Multiply...","value=" + GFactorSupplied);
-
-      saveAs("Tiff", disordered_images_Dir + imgName + "_disordered_32bit.tif");
-      rename(disWindowTitle);
+      
+      if (GFactorAppliedTo == "Image data (pre GP calc)") {
+            run("Multiply...","value=" + GFactor);
+	    saveAs("Tiff", disordered_images_Dir + imgName + "_disordered_GFactorCorrected_32bit.tif");
+      } else {
+            saveAs("Tiff", disordered_images_Dir + imgName + "_disordered_32bit.tif");
+      }
+      
+      rename(disWindowTitle); // restore the window name after saving this image
 
       if (ch_IF != 0) {
          selectWindow(imfWindowTitle);
