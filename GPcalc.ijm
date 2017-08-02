@@ -290,7 +290,7 @@ for (i = 0; i < numberOfImages; i++) {
 				getMinAndMax(currGPMin,currGPMax);
 				setThreshold(GPmaskThreshold, currGPMax);
 				run("Threshold...");
-				waitForUser("Adjust GP threshold and press OK");
+				waitForUser("Summed Intensity Image for GP Mask\nAdjust threshold and press OK");
 				if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				run("Threshold...");
 				getThreshold(GPmaskThreshold,currGPMax);
@@ -340,7 +340,7 @@ for (i = 0; i < numberOfImages; i++) {
 					getMinAndMax(currIFMin,currIFMax);
 					setThreshold(IFmaskThreshold, currIFMax);
 	 	 			run("Threshold...");
-	 	 			waitForUser("Adjust IF Channel threshold and press OK");
+	 	 			waitForUser("Immunofluoresence channel image for IF-mask\nAdjust threshold and press OK");
 	 	 			if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 					run("Threshold...");
 					getThreshold(IFmaskThreshold,currIFMax);
