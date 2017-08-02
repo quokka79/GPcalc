@@ -50,6 +50,8 @@ The IF channel will be used to mask the GP image, so you can check GP against yo
 
 **G factor** _(a number, Default: 1)_ If you have calculated a G factor, enter it here. If you don't have one or don't need to use one, then use 1 here.
 
+**Apply G factor to image data or histograms?** _(a choice, Default:"Histogram data (post GP calc)_ The G Factor correction can be applied to image data prior to the calculation of the GP values, or to the histogram values after GP calculation (leaving the GP image uncorrected). If you have set G factor (above) to 1 then this choice is irrelevant.
+
 HSB images: The GP image can be merged with intensity values from an original image channel to make a faux-coloured intensity image.
 
 **Do you want to generate HSB images?** _(Yes or No choice, Default: Yes)_ Yes to make such an image.
