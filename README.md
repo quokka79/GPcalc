@@ -86,8 +86,11 @@ Intensity values will be used from this raw data channel. You can also select th
 **Lookup Table for HSB Images** _(list selection)_  
 GP values will be colourised according to this LUT.
 
-**Apply brightness from first image to all?** _(Yes or No choice, Default: No)_  
+**Apply fixed intensity range to all images?** _(Yes or No choice, Default: No)_  
 The first image that is processed will be used to manually set a brightness adjustment for the GP data. This GP brightness range will be applied for all subsequent images. This is here because it was an option in the original macro but it is highly dependent on the properties (and your judgement) of the first image in your folder!
+
+**Apply 1px median filter prior to saving HSB image?** _(Yes or No choice, Default: No)_
+Due to the ratiometric nature of GP calculations, the false-colour (HSB) images produced in this section can look a little harsh and noisy. For presentation purposes, applying a 1px median filter can improve the appearance by diminishing harsh features like speckled noise.
 
 Once these settings look good, click OK to begin processing. A progress bar in the ImageJ/FiJi main window will inform you of how the overall processing is going.
 
