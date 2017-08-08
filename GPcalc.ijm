@@ -14,22 +14,13 @@ dir = getDirectory("Choose a Directory ");
 //listDir = getFileList(dir);
 //numberOfImages = listDir.length;
 
-// Init some vars
-LUTlist1 = newArray("Grays","Fire","candyBright DavLUT","Rainbow RGB");
+// Initialise defaults and selection lists
+InputFileExt = ".nd2";
 YNquestion = newArray("Yes","No");
 GFapplication = newArray("Image data (pre GP calc)","Histogram data (post GP calc)");
-InputFileExt = ".nd2";
-HSBrightChannelOptions = newArray("Ordered channel","Disordered channel","Immunofluoresence channel", "Sum of Ordered + Disordered", "Sum O+D and also IF channel");
 ThreshList = newArray("Normal","Otsu");
-
-// get all the available LUTs
-Lut_Dir = getDirectory("luts");
-LUTlist = ListFiles(Lut_Dir, ".lut");
-for (q = 0; q < LUTlist.length; q++) {
- LUTlist[q] =replace(LUTlist[q], ".lut", "");
-}
-LUTlist_builtin = newArray("Fire", "Grays", "Ice", "Spectrum", "3-3-2 RGB", "Red", "Green", "Blue", "Cyan", "Magenta", "Yellow", "Red/Green");
-LUTlist = Array.concat(LUTlist_builtin, LUTlist);
+HSBrightChannelOptions = newArray("Ordered channel","Disordered channel","Immunofluoresence channel", "Sum of Ordered + Disordered", "Sum O+D and also IF channel");
+LUTlist = getLUTlist();
 
 // Choose image channels and threshold value
 Dialog.create("GP analysis parameters");
@@ -39,13 +30,13 @@ Dialog.addString("Short Results Descriptor:", "");
 Dialog.addMessage("------------------------------------------- Image channels -------------------------------------------");
 Dialog.addNumber("Membrane dye - Ordered channel:", 1);
 Dialog.addNumber("Membrane dye - Disordered channel:", 2);
-Dialog.addNumber("Immunofluorescence channel (0 = None):", 0);
+Dialog.addNumber("Immunofluorescence channel (0 = None):", 3);
 
 Dialog.addMessage("------------------------------------------- GP Calculation -------------------------------------------");
 Dialog.addChoice("Use native bit depth?",YNquestion, "Yes");
-Dialog.addNumber("G factor (1 if unknown):", 1);
+Dialog.addNumber("G factor (1 if unknown, -1 to estimate):", 1);
 Dialog.addChoice("Apply G factor to image data or histograms?",GFapplication, "Histogram data (post GP calc)");
-Dialog.addChoice("Lookup Table for GP Images:", LUTlist1, "Grays");
+Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Grays");
 
 Dialog.addMessage("------------------------------------------- Mask Thresholds ------------------------------------------");
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
@@ -55,13 +46,16 @@ Dialog.addChoice("Normal method: Tweak thresholds manually?",YNquestion, "Yes");
 
 Dialog.addMessage("--------------------------------------------- HSB Images ---------------------------------------------");
 Dialog.addChoice("Do you want to generate HSB images?",YNquestion, "Yes");
-Dialog.addChoice("HSB Brightness from: ", HSBrightChannelOptions, "Ordered channel");
+Dialog.addChoice("HSB Brightness from: ", HSBrightChannelOptions, "Sum O+D and also IF channel");
 Dialog.addChoice("Lookup Table for GP data: ",LUTlist, "16_colors");
 Dialog.addChoice("Apply fixed intensity range to all images?",YNquestion, "No");
+Dialog.addChoice("Apply 1px median filter prior to saving HSB image?",YNquestion, "No");
 
 Dialog.addMessage("\n");
 Dialog.show();
 
+// make sure we aren't doing 'weighted' conversions, in case the input data is formatted as an RGB stack.
+run("Conversions...", "scale");
 
 // Set variables from dialog input
 InputFileExt = Dialog.getString();
@@ -85,6 +79,7 @@ MakeHSBimages = Dialog.getChoice();
 HSBrightChannel = Dialog.getChoice();
 HSBLUTName = Dialog.getChoice();
 ApplySameBrightness =Dialog.getChoice();
+ApplyMedianFilter =Dialog.getChoice();
 
 
 // these have to survive inside the HSB function
@@ -144,6 +139,9 @@ File.makeDirectory(ordered_images_Dir);
 
 disordered_images_Dir = InputImages_Dir + "Disordered Images" + File.separator;
 File.makeDirectory(disordered_images_Dir);
+
+sumGP_images_Dir = InputImages_Dir + "Sum (Ord+Dis) Images" + File.separator;
+File.makeDirectory(sumGP_images_Dir);
 
 GP_images_Dir = results_Dir + "GP-masked GP images" + File.separator;
 File.makeDirectory(GP_images_Dir);
@@ -208,7 +206,7 @@ for (i = 0; i < numberOfImages; i++) {
 	setBatchMode(true);
 
 	// open the current image
-	run("Bio-Formats Importer", "open='" + dir + imgName + "' color_mode=Default view=[Standard ImageJ] stack_order=Default virtual split_channels");
+	run("Bio-Formats Importer", "open=[" + dir + imgName + "] color_mode=Default view=[Standard ImageJ] stack_order=Default virtual split_channels");
 	
 	// set window titles
 	ordWindowTitle = imgName + " - C=" + chOrdered - 1;
@@ -219,23 +217,22 @@ for (i = 0; i < numberOfImages; i++) {
 
 	//select ordered
 	selectWindow(ordWindowTitle);
+	run("Grays");
 	if (UseNativeBitDepth == "No") {
 		run("8-bit");
-		run("Grays");
 		run("32-bit");
 	}
 	saveAs("Tiff", ordered_images_Dir + imgName + "_ordered_32bit.tif");
 	rename(ordWindowTitle);
 
+
 	//select disordered, apply GFactor correction
 	selectWindow(disWindowTitle);
 	run("Grays");
-
 	if (UseNativeBitDepth == "No") {
 		run("8-bit");
 		run("32-bit");
 	}
-	
 	if (GFactorAppliedTo == "Image data (pre GP calc)") {
 		run("Multiply...","value=" + GFactor);
 		saveAs("Tiff", disordered_images_Dir + imgName + "_disordered_GFactorCorrected_32bit.tif");
@@ -282,18 +279,20 @@ for (i = 0; i < numberOfImages; i++) {
 	// create masked GP by thresholding
 	selectWindow(sumName);
 	run("Duplicate..."," ");
+	saveAs("Tiff", sumGP_images_Dir + imgName + "_Ord+Dis_32bit.tif");
 	SumMaskName = "SumMask";
 	rename(SumMaskName);
 		 
 	if (ThresholdType == "Normal") {
 		if (TweakThreshold == "Yes"){
 			if (i == 0) { // first image in the list
+				selectWindow(SumMaskName);
 		 		setBatchMode("show");
 				setOption("BlackBackground", true);
 				getMinAndMax(currGPMin,currGPMax);
 				setThreshold(GPmaskThreshold, currGPMax);
 				run("Threshold...");
-				waitForUser("Summed Intensity Image for GP Mask\nAdjust threshold and press OK");
+				waitForUser("Summed Intensity Image for GP Mask\nAdjust threshold, apply it (do not set bg pixels to NaN), and press OK here to continue...");
 				if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				run("Threshold...");
 				getThreshold(GPmaskThreshold,currGPMax);
@@ -301,11 +300,13 @@ for (i = 0; i < numberOfImages; i++) {
 		 		setBatchMode("hide");
 			}
 		} else {
+			selectWindow(SumMaskName);
 			getMinAndMax(currGPMin,currGPMax);
 			setThreshold(GPmaskThreshold, currGPMax);
 		}
 
 	} else if (ThresholdType == "Otsu") {
+		selectWindow(SumMaskName);
 		setAutoThreshold("Otsu dark");
 	}
 
@@ -318,7 +319,7 @@ for (i = 0; i < numberOfImages; i++) {
 	GPname = imgName + " - GP";
 	saveAs("tiff", GP_images_Dir + imgName + "_maskedGP");
 	rename(GPname);
-	selectWindow("SumMask");
+	selectWindow(SumMaskName);
 	close();
 
 	// histograms
@@ -343,7 +344,7 @@ for (i = 0; i < numberOfImages; i++) {
 					getMinAndMax(currIFMin,currIFMax);
 					setThreshold(IFmaskThreshold, currIFMax);
 	 	 			run("Threshold...");
-	 	 			waitForUser("Immunofluoresence channel image for IF-mask\nAdjust threshold and press OK");
+	 	 			waitForUser("Immunofluoresence channel image for IF-mask\nAdjust threshold, apply it, and press OK here to continue...");
 	 	 			if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 					run("Threshold...");
 					getThreshold(IFmaskThreshold,currIFMax);
@@ -472,6 +473,7 @@ function HSBgeneration(HSBIntensityChannel, OutfileSuffix) {
 	BrightChannel = "BrightnessChannel";
 	run("Duplicate..."," ");
 	rename(BrightChannel);
+	run("8-bit");
 	run("Enhance Contrast", "saturated=0.35 normalize");
 
 	//run("Set Measurements...", "min limit display redirect=None decimal=5"); // ? not sure what this does here
@@ -509,21 +511,25 @@ function HSBgeneration(HSBIntensityChannel, OutfileSuffix) {
 
 	imageCalculator("Multiply create 32-bit", HueChannel + " (red)", BrightChannel);
 	rename("bR");
-	run("8-bit");
 
 	imageCalculator("Multiply create 32-bit", HueChannel + " (green)", BrightChannel);
 	rename("bG");
-	run("8-bit");
 
 	imageCalculator("Multiply create 32-bit", HueChannel + " (blue)", BrightChannel);
 	rename("bB");
-	run("8-bit");
 
 	run("Merge Channels...", "red=bR green=bG blue=bB gray=*None*");
 	selectWindow("RGB");
 	HSBname = imgName + " HSB";
 	rename(HSBname);
-	saveAs("tiff", HSB_Dir + imgName + "_HSB by " + OutfileSuffix);
+
+	if (ApplyMedianFilter == "Yes") {
+		run("Median...", "radius=1");
+		saveAs("tiff", HSB_Dir + imgName + "_HSB(medianfiltered) by " + OutfileSuffix);
+	} else {
+		saveAs("tiff", HSB_Dir + imgName + "_HSB by " + OutfileSuffix);
+	}
+	close();
 
 	selectWindow(HueChannel + " (red)");
 	close();
@@ -598,7 +604,7 @@ function MakeLUTbar(CmapLUTName, CmapMin, CmapMax,SaveFileName) {
 	drawString(d2s(CmapMin,2),39,264);
 	run("Select None");
 	selectWindow("LUT Panel");
-	saveAs("tiff", SaveFileName);
+	saveAs("png", SaveFileName);
 	close();
 
 }
@@ -681,6 +687,18 @@ function printInfo () {
 
 }
 
+
+// Returns a list of the available LUTs from the 'luts' folder as well as the built-in ones
+function getLUTlist() {
+	userLUTdir = getDirectory("luts");
+	userLUTlist = ListFiles(userLUTdir, ".lut");
+	for (q = 0; q < userLUTlist.length; q++) {
+ 		userLUTlist[q] =replace(userLUTlist[q], ".lut", "");
+	}
+	IJ_default_LUTlist = newArray("Fire", "Grays", "Ice", "Spectrum", "3-3-2 RGB", "Red", "Green", "Blue", "Cyan", "Magenta", "Yellow", "Red/Green");
+	LUTlist = Array.concat(IJ_default_LUTlist, userLUTlist);
+	return LUTlist;
+}
 
 // This shows only those files with TargetExtn found within InputFolder.
 // To show only the subfolders use TargetExtn = "/"
