@@ -49,7 +49,7 @@ Dialog.addChoice("Do you want to generate HSB images?",YNquestion, "Yes");
 Dialog.addChoice("HSB Brightness from: ", HSBrightChannelOptions, "Sum O+D and also IF channel");
 Dialog.addChoice("Lookup Table for GP data: ",LUTlist, "16_colors");
 Dialog.addChoice("Apply fixed intensity range to all images?",YNquestion, "No");
-Dialog.addChoice("Apply 1px median filter prior to saving HSB image?",YNquestion, "No");
+Dialog.addChoice("Apply 1px median filter prior to save?",YNquestion, "No");
 
 Dialog.addMessage("\n");
 Dialog.show();
@@ -99,7 +99,6 @@ if (ch_IF == 0) {
 		Dialog.addMessage("Whoops! You want to use the IF channel but haven't specified a channel number for it.");
 		Dialog.addNumber("Immunofluorescence channel (0 = None):", 3);
 		Dialog.addMessage("\n");
-		Dialog.show();
 		ch_IF = Dialog.getNumber();
 
 		if (ch_IF == 0) {
@@ -154,8 +153,12 @@ File.makeDirectory(rawGP_images_Dir);
 
 
 if (MakeHSBimages == "Yes") {
- HSB_Dir = results_Dir + "HSB images" + File.separator;
- File.makeDirectory(HSB_Dir);
+
+	HSB_Dir = results_Dir + "HSB images" + File.separator;
+	File.makeDirectory(HSB_Dir);
+	
+	HSB_TIF_Dir = HSB_Dir + "TIF" + File.separator;
+	File.makeDirectory(HSB_TIF_Dir);
 
  if (ApplySameBrightness == "No") {
 	HSB_LUTs_Dir = HSB_Dir + "colorbars" + File.separator;
@@ -280,6 +283,7 @@ for (i = 0; i < numberOfImages; i++) {
 	selectWindow(sumName);
 	run("Duplicate..."," ");
 	saveAs("Tiff", sumGP_images_Dir + imgName + "_Ord+Dis_32bit.tif");
+	// run("Add...", "value=2");
 	SumMaskName = "SumMask";
 	rename(SumMaskName);
 		 
@@ -292,7 +296,7 @@ for (i = 0; i < numberOfImages; i++) {
 				getMinAndMax(currGPMin,currGPMax);
 				setThreshold(GPmaskThreshold, currGPMax);
 				run("Threshold...");
-				waitForUser("Summed Intensity Image for GP Mask\nAdjust threshold, apply it (do not set bg pixels to NaN), and press OK here to continue...");
+				waitForUser("Summed Intensity Image for GP Mask\nAdjust threshold, apply it (UN-check: set bg pixels to NaN), and press OK here to continue...");
 				if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				run("Threshold...");
 				getThreshold(GPmaskThreshold,currGPMax);
@@ -310,21 +314,29 @@ for (i = 0; i < numberOfImages; i++) {
 		setAutoThreshold("Otsu dark");
 	}
 
-	
+	run("Macro...", "code=[if (v != v) v = 0;]"); //convert NaNs to zero.
 	run("Convert to Mask");
 	run("Subtract...", "value=254");
 	rename(SumMaskName);
-	imageCalculator("Multiply create", SumMaskName, rawGPname);
+	
+	selectWindow(rawGPname);
+	run("Duplicate..."," ");
+	premaskGPname = "premaskGP";
+	rename(premaskGPname);
+	run("Add...", "value=2"); // this bumps the low-end from -1 to 0 which allows ImageJ to turn NaN-background to black and the LUT applies across the rest of the image.
+	run("Macro...", "code=[if (v != v) v = 0;]");
+	
+	imageCalculator("Multiply create", SumMaskName, premaskGPname);
 	run(GPLUTname);
-	GPname = imgName + " - GP";
-	saveAs("tiff", GP_images_Dir + imgName + "_maskedGP");
-	rename(GPname);
+	maskedGPname = imgName + " - GP";
+	saveAs("tiff", GP_images_Dir + imgName + "_GP-masked GP");
+	rename(maskedGPname);
 	selectWindow(SumMaskName);
 	close();
 
 	// histograms
-	HistoFileName=histogramGP_Dir + imgName + "_Histogram.tsv";
-	HistogramGeneration(GPname, HistoFileName);
+	HistoFileName=histogramGP_Dir + imgName + "_GP-masked GP Histogram.tsv";
+	HistogramGeneration(maskedGPname, HistoFileName);
 
 	// if we are given some other intensity channel (the immunofluoresence channel) then...
 	if (ch_IF != 0) {
@@ -367,13 +379,13 @@ for (i = 0; i < numberOfImages; i++) {
 		setMinAndMax(0.0,1.0);
 
 		GPIFName = imgName + " - GPIF";
-		imageCalculator("Multiply create", GPname, IFmaskName);
+		imageCalculator("Multiply create", rawGPname, IFmaskName);
 		rename(GPIFName);
 		selectWindow(GPIFName);
 		run(GPLUTname);
-		saveAs("tiff", GP_IF_images_Dir + imgName + "_GP-IF");
+		saveAs("tiff", GP_IF_images_Dir + imgName + "_IF-masked GP");
 		rename(GPIFName);
-		HistoFileName=histogramIF_Dir + imgName + "_GP-IF_Histogram.tsv";
+		HistoFileName=histogramIF_Dir + imgName + "_IF-masked GP Histogram.tsv";
 		HistogramGeneration(GPIFName, HistoFileName);
 
 		selectWindow(IFmaskName);
@@ -395,6 +407,21 @@ for (i = 0; i < numberOfImages; i++) {
 			HSBgeneration(sumName, "sum ord+dis");
 			HSBgeneration(imfWindowTitle, "immunofl");
 		}
+
+		// HSBv2
+		if (HSBrightChannel=="Ordered channel") {
+			HSBv2(ordWindowTitle, "ordered");
+		} else if (HSBrightChannel=="Disordered channel") {
+			HSBv2(disWindowTitle, "disordered");
+		} else if (HSBrightChannel=="Immunofluoresence channel") {
+			HSBv2(imfWindowTitle, "immunofl");
+		} else if (HSBrightChannel=="Sum of Ordered + Disordered") {
+			HSBv2(sumName, "sum ord+dis");
+		} else if (HSBrightChannel=="Sum O+D and also IF channel") {
+			HSBv2(sumName, "sum ord+dis");
+			HSBv2(imfWindowTitle, "immunofl");
+		}
+
 
 	}
 
@@ -465,6 +492,87 @@ function HistogramGeneration (WindowName, HistoFileName) {
 	File.close(HistogramOutFile);
 
 }
+
+
+
+
+function HSBv2(HSBIntensityChannel, OutfileSuffix) {
+
+	selectWindow(HSBIntensityChannel);
+	BrightChannel = "BrightnessChannel";
+	run("Duplicate..."," ");
+	rename(BrightChannel);
+	run("8-bit");
+	//run("Enhance Contrast", "saturated=0.35 normalize");
+
+	// Select and copy the channel to be used for 'hue' (the GP image)
+	selectWindow(rawGPname);
+	run("Duplicate..."," ");
+	HueChannel = "HueChannel";
+	rename(HueChannel);
+	selectWindow(HueChannel);
+	
+	// adjust the GP image (Hue) brightness, if needed, based on the first processed image
+	if (ApplySameBrightness == "Yes") {
+		if (i == 0) { // first image in the list
+			selectWindow(HueChannel);
+			setBatchMode("show");			
+			run("Brightness/Contrast...");
+			waitForUser("set min & max","set min & max");
+			getMinAndMax(GPminUserSet,GPmaxUserSet);
+			setBatchMode("hide");
+		}
+		setMinAndMax(GPminUserSet,GPmaxUserSet);
+	}
+	
+	getMinAndMax(GPminActual,GPmaxActual); // get the actual min/max (in case brightness was not adjusted ... should still be -1/+1)
+
+	time0 = getTime();
+
+	selectWindow(HueChannel);
+	run("RGB Color");
+	//run("Split Channels");
+
+	selectWindow(BrightChannel);
+
+	imageCalculator("Multiply create 32-bit", BrightChannel, HueChannel);
+	run(HSBLUTName);
+	HSBv2name = "HSB method 2";
+	rename(HSBv2name);
+
+	OutfileOptions = "";
+	selectWindow(HSBv2name);
+	if (ApplyMedianFilter == "Yes") {
+		run("Median...", "radius=1");
+		OutfileOptions = "(median filtered)";
+	}
+	saveAs("tiff", HSB_TIF_Dir + imgName + "_HSB v2 " + OutfileOptions + "by " + OutfileSuffix);
+	run("8-bit");
+	saveAs("png", HSB_Dir + imgName + "_HSB v2 " + OutfileOptions + "by " + OutfileSuffix);
+	close();
+
+	selectWindow(BrightChannel);
+	close();
+	selectWindow(HueChannel);
+	close();
+
+	// make a LUT colorbar from the first image only if all images have the same brightness range applied.
+	// Otherwise save a colorbar for each image.
+	if (ApplySameBrightness == "Yes") {
+		if (i == 0) {
+			MakeLUTbar(HSBLUTName, GPminActual, GPmaxActual, HSB_Dir + "All Images - LUT annotated");
+		}
+	} else {
+		MakeLUTbar(HSBLUTName, GPminActual, GPmaxActual, HSB_LUTs_Dir + imgName + "_LUT annotated");
+	}
+
+}
+
+
+
+
+
+
 
 
 function HSBgeneration(HSBIntensityChannel, OutfileSuffix) {
