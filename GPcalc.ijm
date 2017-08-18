@@ -103,7 +103,7 @@ if (MakeHSBimages == "Yes") {
 	// Choose brightness channels and LUT
 	Dialog.create("HSB Image generation");
 	Dialog.addMessage("--------------------------------------------- False-colour Images ---------------------------------------------");
-	Dialog.addChoice("Hue - use Lookup Table for GP data: ",LUTlist, "DavLUT-Bright-BlackMinimum");	
+	Dialog.addChoice("Hue - use Lookup Table for GP data: ",LUTlist, "Candy-Bright-BlackMinimum");	
 	if (ch_IF == 0) {
 		Dialog.addChoice("Brightness - Use intensity from: ", HSBrightChannelOptions_2Ch, Option_D);
 	} else {
