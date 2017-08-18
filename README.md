@@ -20,6 +20,8 @@ Files don't have to be named anything in particular for this macro to work but y
 ## Installation
 As with any ImageJ macro, it's just a text file. Download it an save it somewhere convenient. You can also drag it from your file explorer into the status bar of any running ImageJ instance and it will open it in the macro editor. Or you can click Plugins --> Macros --> Install... and have it available in the Macros menu for that session.
 
+The LUTs included here are useful for generating the false-colour (aka HSL or HSB images). You don't have to use them.
+
 ## Running it
 Once installed or open in the editor, run the macro (click it in the Plugins --> Macros menu or click the Run button in Fiji's text editor or Macros --> Run Macro in ImageJ's text editor) to begin using it.
 
@@ -37,12 +39,15 @@ The results folder will have this at the front of it, so you know what's going o
 
 ### Image Channels
 
-**Membrane dye - Ordered channel** _(a number, Default: 1)_  
-**Membrane dye - Disordered channel** _(also a number, Default: 2)_  
-The channel number which contains the ordered and disordered image data. Channel numbering begins at 1, not zero, as far as this macro is concerned.
+**Channel A (Ordered)** _(a number, Default: 1)_  
+**Channel B (Disordered)** _(also a number, Default: 2)_  
+The channel number which contains the ordered and disordered image data, respectively. Channel numbering begins at 1, not zero, as far as this macro is concerned.
 
-**Immunofluorescence channel** _(a number, Default: 0)_  
+**Channel C (Immunofluorescence channel)** _(a number, Default: 3)_  
 The channel number containing the non-GP data, such as a far-red immunofluoresence image. If there is no such channel, give this a value of 0 (zero) and it will be ignored.
+
+**Channel labels** _(text, Default: ordereded, disordered, and proteinX)_
+These labels will be applied to the output to easily identify which channel is which, especially if you use this for some other ratiometric calculaton which isn't anything to do with membrane order! When not using an IF image (i.e. Channel C = 0) then the label for Channel C is ignored.
 
 ### GP Calculation Options
 
@@ -55,8 +60,8 @@ If you have calculated a G factor, enter it here. If you don't have one or don't
 **Apply G factor to image data or histograms?** _(a choice, Default:"Histogram data (post GP calc)_  
 The G Factor correction can be applied to image data prior to the calculation of the GP values, or to the histogram values after GP calculation (leaving the GP image uncorrected). If you have set G factor (above) to 1 then this choice is irrelevant.
 
-**Lookup Table for GP Images** _(list selection, Default: Grays)_  
-The selected lookup table will be applied to all GP images.
+**Lookup Table for GP Images** _(list selection, Default: Blu2Yel)_  
+The selected lookup table will be applied to all GP images. The default 'Blu2Yel' LUT is included in this repo.
 
 ### Mask Thresholds
 
@@ -65,31 +70,33 @@ The raw GP image will look very messy (noisy) as even the 'background' pixels wi
 **Threshold method** _(list selection)_  
 Choose from either Otsu or Normal. If you choose Normal you'll need to supply appropriate threshold values in the following boxes. Otsu is an automatic method so none of the following threshold values will be used if this method is chosen.
 
-**GP-mask threshold from** _(a number, Default: 15)_  
-A mask of the 32-bit summed-intensity image (the sum of ordered and disordered channels) will be made at this threshold and a 'GP-masked GP' image created containing GP values only for areas above the threshold.
+**Normal method: GP-mask threshold from:** _(a number, Default: 15)_  
+If Normal thresholding is chosen, a mask of the 32-bit summed-intensity image (the sum of ordered and disordered channels) will be made at this threshold and a 'GP-masked GP' image created containing GP values only for areas above the threshold.
 
-**IF-mask threshold from** _(a number, Default: 15)_  
-A mask of the IF image will be made at this threshold and an 'IF-masked GP' image created. This value needs to make sense with your IF image bit depth if you have opted to 'Use native bit-depth' above.
+**Normal method: IF-mask threshold from:** _(a number, Default: 15)_  
+If Normal thresholding is chosen, a mask of the IF image will be made at this threshold and an 'IF-masked GP' image created. This value needs to make sense with your IF image bit depth if you have opted to 'Use native bit-depth' above.
 
-**Tweak thresholds manually?** _(Yes or No choice, Default: Yes)_  
-If Yes then you'll be given a chance to adjust the threshold manually, both for the GP-mask and the IF-mask. The supplied values will be used as a starting point. Once applied, the new threshold values will then be applied to all subsequent images.
+**Normal method: Tweak thresholds manually?** _(Yes or No choice, Default: Yes)_  
+If Normal thresholding is chosen, and this option is 'Yes', then you'll be given a chance to adjust the threshold manually, both for the GP-mask and the IF-mask. The supplied values will be used as a starting point. Once applied, the new threshold values will then be applied to all subsequent images.
 
-### HSB Images
-HSB images is a faux-coloured GP-intensity image. The raw GP image is colourised with a lookup-table and then modulated using the intensity values from one of the original input images (such as the IF channel) to generate 'IF-masked GP' images.
+### False-colour Images
+Generate a false-coloured GP-intensity image. The raw GP image is colourised with a lookup-table and then modulated using the intensity values from one of the original input images (such as the IF channel) to generate 'IF-masked GP' images.
 
 **Do you want to generate HSB images?** _(Yes or No choice, Default: Yes)_  
 Select Yes to make such an image.
 
-**HSB Brightness from** _(list selection, Default: Ordered channel)_  
+If you select 'Yes' here, you will be present with the following options in a new dialog window:
+
+**Hue - use Lookup Table for GP data:** _(list selection, Default: Candy-Bright-BlackMinimum)_ 
+GP values will be colourised according to this LUT. The default LUT (Candy-Bright-BlackMinimum) is available here but you don't have to use it.
+
+**Brightness - Use intensity from:** _(list selection, Default: Ordered channel)_  
 Intensity values will be used from this raw data channel. You can also select the sum-of-ordered-and-disordered data (to avoid dimming pixels from the opposite order!) or select to make two HSB images, one from the sum and another from the IF channel. If you select an option requiring the IF channel but haven't given an IF channel above (i.e. you gave a '0') then you will be prompted to fix this in a subsequent window.
 
-**Lookup Table for HSB Images** _(list selection)_  
-GP values will be colourised according to this LUT.
-
-**Apply fixed intensity range to all images?** _(Yes or No choice, Default: No)_  
+**Apply fixed restricted intensity range to all images?** _(Yes or No choice, Default: No)_  
 The first image that is processed will be used to manually set a brightness adjustment for the GP data. This GP brightness range will be applied for all subsequent images. This is here because it was an option in the original macro but it is highly dependent on the properties (and your judgement) of the first image in your folder!
 
-**Apply 1px median filter prior to saving HSB image?** _(Yes or No choice, Default: No)_
+**Apply 1px median filter prior to save?** _(Yes or No choice, Default: No)_
 Due to the ratiometric nature of GP calculations, the false-colour (HSB) images produced in this section can look a little harsh and noisy. For presentation purposes, applying a 1px median filter can improve the appearance by diminishing harsh features like speckled noise.
 
 Once these settings look good, click OK to begin processing. A progress bar in the ImageJ/FiJi main window will inform you of how the overall processing is going.
