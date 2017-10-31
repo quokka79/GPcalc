@@ -27,6 +27,8 @@ Once installed or open in the editor, run the macro (click it in the Plugins -->
 
 The first thing is to find the folder containing the images you wish to process. The macro will process all images that it finds in this folder but will not traverse subdirectories. It will only process images of the type specified in the next step.
 
+**Note: Unlike the original macro, you do not have to split apart your images and save them as specially named separate TIF files.** You only need the files as they came off the microscope, e.g. and ND2 file, LIF file, or CZI file. If you do have TIFs then you'll need them as TIF stacks, i.e. all the channels are in a single image file.
+
 After selecting an input folder you will see the options available for processing. These are described below.
 
 ### Input Format & Output Folder
@@ -41,7 +43,7 @@ The results folder will have this at the front of it, so you know what's going o
 
 **Channel A (Ordered)** _(a number, Default: 1)_  
 **Channel B (Disordered)** _(also a number, Default: 2)_  
-The channel number which contains the ordered and disordered image data, respectively. Channel numbering begins at 1, not zero, as far as this macro is concerned.
+The channel number which contains the ordered and disordered image data, respectively. Channel numbering begins at 1, not zero, as far as this macro is concerned. The number is the order in which the channels are stored in your image file, e.g. if you acquired a file so that you have disordered data in the first channel, then an immunofluorsence image, then the ordered data then you would need to put a 3 for Channel A and a 1 for Channel B. In the Channel C field (below) you would put 2.
 
 **Channel C (Immunofluorescence channel)** _(a number, Default: 3)_  
 The channel number containing the non-GP data, such as a far-red immunofluoresence image. If there is no such channel, give this a value of 0 (zero) and it will be ignored.
