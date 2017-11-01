@@ -27,7 +27,7 @@ Once installed or open in the editor, run the macro (click it in the Plugins -->
 
 The first thing is to find the folder containing the images you wish to process. The macro will process all images that it finds in this folder but will not traverse subdirectories. It will only process images of the type specified in the next step.
 
-**Note: Unlike the original macro, you do not have to split apart your images and save them as specially named separate TIF files.** You only need the files as they came off the microscope, e.g. and ND2 file, LIF file, or CZI file. If you do have TIFs then you'll need them as TIF stacks, i.e. all the channels are in a single image file.
+**Note: Unlike the original macro, you do not have to split apart your images and save them as specially named separate TIF files.** You only need the files as they came off the microscope, e.g. an ND2 file, LIF file, or CZI file. If you do have TIFs then you'll need them as TIF stacks, i.e. all the channels are in a single image file.
 
 After selecting an input folder you will see the options available for processing. These are described below.
 
@@ -40,10 +40,21 @@ The extension of the images that you wish to process, e.g. .nd2 or .czi. Only fi
 The results folder will have this at the front of it, so you know what's going on. This can be blank and the results folder will be called 'Results'. A timestamp will also be included to help keep track and avoid over-writing previously processed stuff.
 
 ### Image Channels
+For this section, the channel number refers to the position of each relevent channel within a single image file, e.g. the image file that you saved on the instrument; there's no need to separate and re-save everything as TIFs here.
 
-**Channel A (Ordered)** _(a number, Default: 1)_  
-**Channel B (Disordered)** _(also a number, Default: 2)_  
-The channel number which contains the ordered and disordered image data, respectively. Channel numbering begins at 1, not zero, as far as this macro is concerned. The number is the order in which the channels are stored in your image file, e.g. if you acquired a file so that you have disordered data in the first channel, then an immunofluorsence image, then the ordered data then you would need to put a 3 for Channel A and a 1 for Channel B. In the Channel C field (below) you would put 2.
+The numbering begins at 1, not zero, as far as this macro is concerned: the first image in the file is image 1.
+
+For example, you acquired your image series on a confocal microscope by taking the two ratiometric images simultaneously (recorded on two detectors), followed by an immunofluorescence image. When you open this image (e.g. in ImageJ) you will see a series of three images, in a particular order. If the first image is your 'Channel A' (or ordered) data, then you would put a 1 in the Channel A field. The second image will be Channel B data, so Channel B gets a 2. The final image (Channel C or IF data) would be 3.
+
+This macro assumes that you have acquired your images consistently (same order, settings etc) for the whole set of files you are processing.
+
+**Channel A (Ordered)** _(an integer, Default: 1)_  
+**Channel B (Disordered)** _(also an integer, Default: 2)_  
+The channel numbers (explained above) for the channels that you want to calculate ratiometric GP values for. The GP value is calculated as from the channel intensities as:
+
+GP = (ChA - ChB) / (ChA + ChB)
+
+Thus, when Channel A dominates the GP value will be positive and when Channel B dominated it will be negative. For lipid membrane order experiments, this usually means Channel A is the ordered data and Channel B the disordered data.
 
 **Channel C (Immunofluorescence channel)** _(a number, Default: 3)_  
 The channel number containing the non-GP data, such as a far-red immunofluoresence image. If there is no such channel, give this a value of 0 (zero) and it will be ignored.
