@@ -573,8 +573,8 @@ function HistogramGeneration (WindowName, HistoFileName) {
 	Array.getStatistics(PixelCounts,min,max,mean,stdDev);
 	Sa=(mean*nBins)-counts[0]-counts[nBins-1];
 	HistogramOutFile=File.open(HistoFileName);
-//	print(HistogramOutFile, "IJ Hist.values	GP values	GP values (GFactor-corrected)	Counts (Pixels)	Count (Pixels, Normalized)	Counts (Kernel-Smoothed)	Counts (Smoothed, Normalized)");
-	print(HistogramOutFile, "GP values (GFactor-corrected)	Counts (Pixels)	Count (Pixels, Normalized)	Counts (Kernel-Smoothed)	Counts (Smoothed, Normalized)");
+//	print(HistogramOutFile, "IJ Hist.values	GP values	GP values (GFactor-corrected)	Counts (Pixels)	Counts (Pixels, Normalized)	Counts (Kernel-Smoothed)	Counts (Smoothed, Normalized)");
+	print(HistogramOutFile, "GP values	GP values (GFactor-corrected)	Counts (Pixels)	Counts (Pixels, Normalized)	Counts (Kernel-Smoothed)	Counts (Smoothed, Normalized)");
 	
 	// export the histogram bins. Ignore the absolute final bin as it's always outside the range we have (final bin #255 is for values > 1.0).
 	for (m = 0; m < nBins; m++) {
