@@ -44,8 +44,6 @@ Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Blu2Yel");
 
 Dialog.addMessage("------------------------------------------- Mask Thresholds ------------------------------------------");
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
-Dialog.addNumber("Normal method: GP-mask threshold from", 15);
-Dialog.addNumber("Normal method: IF-mask threshold from: ", 10);
 Dialog.addChoice("Normal method: Tweak thresholds manually?",YNquestion, "Yes");
 
 Dialog.addMessage("--------------------------------------------- False-colour Images ---------------------------------------------");
@@ -76,8 +74,6 @@ GFactorAppliedTo = Dialog.getChoice();
 GPLUTname = Dialog.getChoice();
 
 ThresholdType = Dialog.getChoice();
-GPmaskThreshold = Dialog.getNumber();
-IFmaskThreshold = Dialog.getNumber();
 TweakThreshold =Dialog.getChoice();
 
 MakeHSBimages = Dialog.getChoice();
@@ -91,6 +87,20 @@ listDir = ListFiles(dir, InputFileExt);
 numberOfImages = listDir.length;
 if (numberOfImages == 0) {exit("There are no files with extension \"" + InputFileExt + "\"in folder \n" + dir);}
 
+if (TweakThreshold == "No"){
+	if (ThresholdType == "Normal"){
+	
+		Dialog.create("Enter the threshold values to use")
+		Dialog.addMessage("------------------------------------------- Preset Mask Thresholds ------------------------------------------");
+		Dialog.addNumber("GP-mask threshold from:", 15);
+		Dialog.addNumber("IF-mask threshold from: ", 10);
+		Dialog.addMessage("\n");
+		Dialog.show();
+		
+		GPmaskThreshold = Dialog.getNumber();
+		IFmaskThreshold = Dialog.getNumber();
+	}
+}
 
 if (MakeHSBimages == "Yes") {
 
@@ -358,8 +368,6 @@ for (i = 0; i < numberOfImages; i++) {
 					selectWindow(SumMaskName);
 			 		setBatchMode("show");
 					setOption("BlackBackground", true);
-					getMinAndMax(currGPMin,currGPMax);
-					setThreshold(GPmaskThreshold, currGPMax);
 					setAutoThreshold("Default dark");
 					run("Threshold...");
 					waitForUser("Summed Intensity Image for GP Mask\n1. Adjust only the low-end threshold (the first slider).\n2. Click Apply to apply once you have found a good threshold./\n3. Select the 'Set to NaN' option when asked.\n4. Click OK here to continue...");
@@ -421,8 +429,6 @@ for (i = 0; i < numberOfImages; i++) {
 						selectWindow(IFmaskName);
 						setBatchMode("show");
 						setOption("BlackBackground", true);
-						getMinAndMax(currIFMin,currIFMax);
-						setThreshold(IFmaskThreshold, currIFMax);
 						setAutoThreshold("Default dark");
 		 	 			run("Threshold...");
 		 	 			waitForUser("Immunofluoresence channel image for IF-mask\n1. Adjust only the low-end threshold (the first slider).\n2. Click Apply to apply once you have found a good threshold./\n3. Click OK here to continue...");
