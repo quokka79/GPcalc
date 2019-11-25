@@ -355,17 +355,16 @@ for (i = 0; i < numberOfImages; i++) {
 		selectWindow(sumName);
 		run("Duplicate..."," ");
 		saveAs("Tiff", sumGP_images_Dir + imgName + "_Ord+Dis_32bit.tif");
-		// run("Add...", "value=2");
 		SumMaskName = "SumMask";
 		rename(SumMaskName);
-		 
+		
+		selectWindow(SumMaskName);
 		if (ThresholdType == "Normal") {
 			
 			if (TweakThreshold == "Yes"){
 				
 				if (i == 0) { // first image in the list
-					
-					selectWindow(SumMaskName);
+
 			 		setBatchMode("show");
 					setOption("BlackBackground", true);
 					setAutoThreshold("Default dark");
@@ -377,29 +376,28 @@ for (i = 0; i < numberOfImages; i++) {
 					if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 			 		setBatchMode("hide");
 			 		
+				} else {
+
+					getMinAndMax(currGPMin,currGPMax);
+					setThreshold(GPmaskThreshold, currGPMax);
+
 				}
 				
 			} else {
-				
-				selectWindow(SumMaskName);
+
 				getMinAndMax(currGPMin,currGPMax);
 				setThreshold(GPmaskThreshold, currGPMax);
 				
 			}
 	
 		} else if (ThresholdType == "Otsu") {
-			
-			selectWindow(SumMaskName);
+
 			setAutoThreshold("Otsu dark");
 			
 		}
 
 		createNaNMask();
-		selectWindow(rawGPname);
-		run("Duplicate..."," ");
-		premaskGPname = "premaskGP";
-		rename(premaskGPname);
-		imageCalculator("Multiply create", SumMaskName, premaskGPname);
+		imageCalculator("Multiply create", SumMaskName, rawGPname);
 		run(GPLUTname);
 		maskedGPname = imgName + " - GP";
 		saveAs("tiff", GP_images_Dir + imgName + " (" + Option_D + ")-masked GP");
@@ -414,19 +412,19 @@ for (i = 0; i < numberOfImages; i++) {
 		// if we are given some other intensity channel (the immunofluoresence channel) then...
 		if (ch_IF != 0) {
 		
-			 // make a binary mask from the IF image
-			 selectWindow(imfWindowTitle);
-			 run("Duplicate..."," ");
-			 IFmaskName = "IFMask";
-			 rename(IFmaskName);
-		
+			// make a binary mask from the IF image
+			selectWindow(imfWindowTitle);
+			run("Duplicate..."," ");
+			IFmaskName = "IFMask";
+			rename(IFmaskName);
+
+			selectWindow(IFmaskName);
 			if (ThresholdType == "Normal") {
 				
 				if (TweakThreshold == "Yes"){
 					
 					if (i == 0) { // first image in the list
-						
-						selectWindow(IFmaskName);
+
 						setBatchMode("show");
 						setOption("BlackBackground", true);
 						setAutoThreshold("Default dark");
@@ -438,10 +436,15 @@ for (i = 0; i < numberOfImages; i++) {
 						if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				 		setBatchMode("hide");
 				 		
+					} else {
+
+					getMinAndMax(currIFMin,currIFMax);
+					setThreshold(IFmaskThreshold, currIFMax);
+					
 					}
 					
 				} else {
-					
+
 					getMinAndMax(currIFMin,currIFMax);
 					setThreshold(IFmaskThreshold, currIFMax);
 					
@@ -452,22 +455,19 @@ for (i = 0; i < numberOfImages; i++) {
 				setAutoThreshold("Otsu dark");
 				
 			}
-	
-			selectWindow(IFmaskName);
+
 			createNaNMask();
-	
-			GPIFName = imgName + " - GPIF";
-			imageCalculator("Multiply create", rawGPname, IFmaskName);
-			rename(GPIFName);
-			selectWindow(GPIFName);
+			imageCalculator("Multiply create", IFmaskName, rawGPname);
 			run(GPLUTname);
+			GPIFName = imgName + " - GPIF";
 			saveAs("tiff", GP_IF_images_Dir + imgName + " (" + Option_C + ")-masked GP");
 			rename(GPIFName);
-			HistoFileName=histogramIF_Dir + imgName + "GP Histogram" + "(masked by " + Option_C + ").tsv";
-			HistogramGeneration(GPIFName, HistoFileName);
-	
 			selectWindow(IFmaskName);
 			close();
+						
+			HistoFileName=histogramIF_Dir + imgName + "GP Histogram" + "(masked by " + Option_C + ").tsv";
+			HistogramGeneration(GPIFName, HistoFileName);
+
 		}
 
 		if (MakeHSBimages=="Yes") {
