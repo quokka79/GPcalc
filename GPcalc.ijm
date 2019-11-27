@@ -40,7 +40,7 @@ Dialog.addMessage("------------------------------------------- GP Calculation --
 Dialog.addChoice("Use native bit depth?",YNquestion, "Yes");
 Dialog.addNumber("G factor (1 if unknown, -1 to estimate):", 1);
 Dialog.addChoice("Apply G factor to image data or histograms?",GFapplication, "Histogram data (post GP calc)");
-Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Blu2Yel");
+Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Blu2Yel-BlackMinimum");
 
 Dialog.addMessage("------------------------------------------- Mask Thresholds ------------------------------------------");
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
@@ -116,7 +116,7 @@ if (MakeHSBimages == "Yes") {
 	// Choose brightness channels and LUT
 	Dialog.create("HSB Image generation");
 	Dialog.addMessage("--------------------------------------------- False-colour Images ---------------------------------------------");
-	Dialog.addChoice("Hue - use Lookup Table for GP data: ",LUTlist, "DavLUT-Bright-BlackMinimum");	
+	Dialog.addChoice("Hue - use Lookup Table for GP data: ",LUTlist, "Candy-Bright-BlackMinimum");
 	if (ch_IF == 0) {
 		Dialog.addChoice("Brightness - Use intensity from: ", HSBrightChannelOptions_2Ch, Option_D);
 	} else {
@@ -368,10 +368,10 @@ for (i = 0; i < numberOfImages; i++) {
 			 		setBatchMode("show");
 					setOption("BlackBackground", true);
 					setAutoThreshold("Default dark");
-					run("Threshold...");
+					run("Threshold..."); // ask user to set the threshold
 					waitForUser("Summed Intensity Image for GP Mask\n1. Adjust only the low-end threshold (the first slider).\n2. Click Apply to apply once you have found a good threshold./\n3. Select the 'Set to NaN' option when asked.\n4. Click OK here to continue...");
-					if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
-					run("Threshold...");
+					//if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
+					//run("Threshold..."); // run threshold again to retrieve the values
 					getThreshold(GPmaskThreshold,currGPMax);
 					if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 			 		setBatchMode("hide");
@@ -430,8 +430,8 @@ for (i = 0; i < numberOfImages; i++) {
 						setAutoThreshold("Default dark");
 		 	 			run("Threshold...");
 		 	 			waitForUser("Immunofluoresence channel image for IF-mask\n1. Adjust only the low-end threshold (the first slider).\n2. Click Apply to apply once you have found a good threshold./\n3. Click OK here to continue...");
-		 	 			if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
-						run("Threshold...");
+		 	 			//if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
+						//run("Threshold...");
 						getThreshold(IFmaskThreshold,currIFMax);
 						if (isOpen('Threshold')) {selectWindow('Threshold'); run('Close');}
 				 		setBatchMode("hide");
@@ -539,10 +539,9 @@ function newFolder() {
 function createNaNMask() {
 	
 	run("Options...", "black");
-	run("Convert to Mask");
-	run("Divide...","value=255");
 	run("32-bit");
-	run("Macro...", "code=[if (v == 0) v = NaN;]");
+	run("Macro...", "code=[if (v == 0) v = NaN;]"); // set the background pixels to NaNs
+	run("Macro...", "code=[if (v > -1) v = 1;]");   // set the foreground pixels to 1.0
 	setMinAndMax(0.0,1.0);
 	
 }
