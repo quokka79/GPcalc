@@ -46,7 +46,6 @@ Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Blu2Yel-BlackMinimum")
 Dialog.addMessage("------------------------------------------- Mask Thresholds ------------------------------------------");
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
 Dialog.addChoice("Normal method: Tweak thresholds manually?",YNquestion, "Yes");
-Dialog.addChoice("Normal method: Manually choose threshold for...",DoThresholdsFor, "First image only");
 
 Dialog.addMessage("--------------------------------------------- False-colour Images ---------------------------------------------");
 Dialog.addChoice("Do you want to generate False-colour images?",YNquestion, "Yes");
@@ -77,12 +76,6 @@ GPLUTname = Dialog.getChoice();
 
 ThresholdType = Dialog.getChoice();
 TweakThreshold = Dialog.getChoice();
-ThreshForAllChoice = Dialog.getChoice();
-if (ThreshForAllChoice == DoThresholdsFor[1]) {
-	ThreshForAll = true;
-} else {
-	ThreshForAll = false;
-}
 
 MakeHSBimages = Dialog.getChoice();
 
@@ -95,8 +88,8 @@ listDir = ListFiles(dir, InputFileExt);
 numberOfImages = listDir.length;
 if (numberOfImages == 0) {exit("There are no files with extension \"" + InputFileExt + "\"in folder \n" + dir);}
 
-if (TweakThreshold == "No"){
-	if (ThresholdType == "Normal"){
+if (ThresholdType == "Normal"){
+	if (TweakThreshold == "No"){
 	
 		Dialog.create("Enter the threshold values to use")
 		Dialog.addMessage("------------------------------------------- Preset Mask Thresholds ------------------------------------------");
@@ -107,6 +100,27 @@ if (TweakThreshold == "No"){
 		
 		GPmaskThreshold = Dialog.getNumber();
 		IFmaskThreshold = Dialog.getNumber();
+		
+	} else {
+
+		Dialog.create("Adjust threshold for all images?")
+		Dialog.addMessage("-------------------------------------- Adjust threshold for all images? -------------------------------------");
+		Dialog.addMessage("Thresholds can be set for each image individually");
+		Dialog.addMessage("    OR");
+		Dialog.addMessage("The first image's threshold can be applied to all subsequent images.\n");
+		Dialog.addMessage("Each image has a threshold set for the sum GP images and a second optional");
+		Dialog.addMessage("threshold for the immunofluoresence channel (if present).");
+		Dialog.addChoice("Adjust threshold for...",DoThresholdsFor, "First image only");
+		Dialog.addMessage("\n");
+		Dialog.show();
+		
+		ThreshForAllChoice = Dialog.getChoice();
+		if (ThreshForAllChoice == DoThresholdsFor[1]) {
+			ThreshForAll = true;
+		} else {
+			ThreshForAll = false;
+		}
+		
 	}
 }
 
