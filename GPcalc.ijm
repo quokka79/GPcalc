@@ -19,6 +19,7 @@ InputFileExt = GuessFileExtn;
 YNquestion = newArray("Yes","No");
 GFapplication = newArray("Image data (pre GP calc)","Histogram data (post GP calc)");
 ThreshList = newArray("Normal","Otsu");
+DoThresholdsFor = newArray("First image only", "All images");
 LUTlist = getLUTlist();
 
 // Choose image channels and threshold value
@@ -45,6 +46,7 @@ Dialog.addChoice("Lookup Table for GP Images:", LUTlist, "Blu2Yel-BlackMinimum")
 Dialog.addMessage("------------------------------------------- Mask Thresholds ------------------------------------------");
 Dialog.addChoice("Threshold method: ", ThreshList, "Normal");
 Dialog.addChoice("Normal method: Tweak thresholds manually?",YNquestion, "Yes");
+Dialog.addChoice("Normal method: Manually choose threshold for...",DoThresholdsFor, "First image only");
 
 Dialog.addMessage("--------------------------------------------- False-colour Images ---------------------------------------------");
 Dialog.addChoice("Do you want to generate False-colour images?",YNquestion, "Yes");
@@ -74,7 +76,13 @@ GFactorAppliedTo = Dialog.getChoice();
 GPLUTname = Dialog.getChoice();
 
 ThresholdType = Dialog.getChoice();
-TweakThreshold =Dialog.getChoice();
+TweakThreshold = Dialog.getChoice();
+ThreshForAllChoice = Dialog.getChoice();
+if (ThreshForAllChoice == DoThresholdsFor[1]) {
+	ThreshForAll = true;
+} else {
+	ThreshForAll = false;
+}
 
 MakeHSBimages = Dialog.getChoice();
 
@@ -363,7 +371,7 @@ for (i = 0; i < numberOfImages; i++) {
 			
 			if (TweakThreshold == "Yes"){
 				
-				if (i == 0) { // first image in the list
+				if (i == 0 || ThreshForAll) { // first image in the list
 
 			 		setBatchMode("show");
 					setOption("BlackBackground", true);
@@ -423,7 +431,7 @@ for (i = 0; i < numberOfImages; i++) {
 				
 				if (TweakThreshold == "Yes"){
 					
-					if (i == 0) { // first image in the list
+					if (i == 0 || ThreshForAll) { // first image in the list
 
 						setBatchMode("show");
 						setOption("BlackBackground", true);
